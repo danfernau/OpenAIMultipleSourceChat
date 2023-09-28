@@ -16,16 +16,7 @@ from langchain.llms import AzureOpenAI
 import os
 import openai
 
-# Confuration of OpenAI Settings
-# os.environ["OPENAI_API_TYPE"] = "azure"
-# os.environ["OPENAI_API_BASE"] = "YOUR_OPENAI_ENDPOINT"
-# os.environ["OPENAI_API_KEY"] = "YOUR_OPENAI_API_KEY"
-# os.environ["OPENAI_API_VERSION"] = "2023-05-15"
-# model: str = "text-embedding-ada-002"
-
-
 #functions
-
 def get_pdf_text(pdf_docs):
     text = ""
     for pdf in pdf_docs:
@@ -47,15 +38,15 @@ def get_text_chunks(text):
 
 
 def get_vectorstore(text_chunks):
-    embeddings = OpenAIEmbeddings()
-    # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
+    #embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-base")
     vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
 
 
 def get_conversation_chain(vectorstore):
-    llm = AzureOpenAI()
-    # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    #llm = AzureOpenAI(model_id="text-davinci-002")
+    llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
@@ -68,7 +59,7 @@ def get_conversation_chain(vectorstore):
 
 
 def handle_userinput(user_question):
-    response = st.session_state.conversation({'question': user_question})
+    response = st.session_state.conversation(user_question)
     st.session_state.chat_history = response['chat_history']
 
     for i, message in enumerate(st.session_state.chat_history):
@@ -81,7 +72,9 @@ def handle_userinput(user_question):
 
 
 def main():
+    # load environment variables
     load_dotenv()
+
     st.set_page_config(page_title="Chat with multiple PDFs",
                        page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
@@ -110,13 +103,16 @@ def main():
 
                 # create vector store
                 vectorstore = get_vectorstore(text_chunks)
+                #vectorstore = query(text_chunks)
 
+                st.write(vectorstore)
+                st.write(st.session_state)
+                st.write("after conversation chain:")
+                
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore)
-                
-                st.write(vectorstore)
-
+                st.write(st.session_state)
 
 if __name__ == '__main__':
     main()
