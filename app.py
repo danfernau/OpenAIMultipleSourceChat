@@ -108,7 +108,7 @@ def main():
                 st.write(vectorstore)
                 st.write(st.session_state)
                 st.write("after conversation chain:")
-                
+
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore)
